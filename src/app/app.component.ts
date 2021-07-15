@@ -23,7 +23,7 @@ export class AppComponent implements AfterViewInit {
 
   ngAfterViewInit() {
     navigator.mediaDevices
-      .getUserMedia({ video: true })
+      .getUserMedia({ video: { facingMode: 'environment' } })
       .then((mediaStream) => {
         this.video.nativeElement.srcObject = mediaStream;
         this.video.nativeElement.onloadedmetadata = () =>

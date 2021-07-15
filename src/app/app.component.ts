@@ -34,7 +34,7 @@ export class AppComponent implements AfterViewInit {
   }
 
   takePhoto = async () => {
-    console.log(this.video.nativeElement);
+    this.ocrResult = '---';
     const canvas = document.createElement('canvas');
     canvas.height = this.video.nativeElement.videoHeight;
     canvas.width = this.video.nativeElement.videoWidth;

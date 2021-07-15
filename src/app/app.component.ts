@@ -1,9 +1,9 @@
 import {
-  Component,
-  OnInit,
-  ViewChild,
-  ElementRef,
   AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
 } from '@angular/core';
 import { createWorker } from 'tesseract.js';
 
@@ -13,8 +13,9 @@ import { createWorker } from 'tesseract.js';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent implements AfterViewInit {
+export class AppComponent implements AfterViewInit, OnDestroy {
   timerId!: NodeJS.Timeout;
+  worker: any;
 
   @ViewChild('video') video!: ElementRef;
   @ViewChild('progress') progress!: ElementRef;
@@ -50,27 +51,28 @@ export class AppComponent implements AfterViewInit {
 
     this.loading = true;
 
-    const worker = createWorker({
-      logger: (m) => {
-        const value = m.progress.toFixed(2);
-        const pro = value * 100;
-        if (pro > 98 && m.status === 'recognizing text') {
-          this.loading = false;
-        }
-        this.progress.nativeElement.style.width = `${pro}%`;
-      },
-    });
+    if (!this.worker) {
+      this.worker = createWorker({
+        logger: (m) => {
+          const value = m.progress.toFixed(2);
+          const pro = value * 100;
+          if (pro > 98 && m.status === 'recognizing text') {
+            this.loading = false;
+          }
+          this.progress.nativeElement.style.width = `${pro}%`;
+        },
+      });
 
-    await worker.load();
-    await worker.loadLanguage('spa');
-    await worker.initialize('spa');
-    const { data } = await worker.recognize(canvas, {});
-
-    if (data && data.text) {
-      this.checkDNI(data.text);
+      await this.worker.load();
+      await this.worker.loadLanguage('spa');
+      await this.worker.initialize('spa');
+      this.takePhoto();
+    } else {
+      const { data } = await this.worker.recognize(canvas, {});
+      if (data && data.text) {
+        this.checkDNI(data.text);
+      }
     }
-
-    await worker.terminate();
   };
 
   checkDNI(text: string) {
@@ -91,8 +93,9 @@ export class AppComponent implements AfterViewInit {
         this.ocrResult = 'N/A';
       }
     }
-
-    /* ;
-    ABC.charAt(nifNumbers % 23); */
   }
+
+  ngOnDestroy = async () => {
+    await this.worker.terminate();
+  };
 }

@@ -1,7 +1,7 @@
 <!--The content below is only a placeholder and can be replaced.-->
 <div class="d-flex flex-column">
   <video #video controls id="video"></video>
-  <button type="button" class="btn btn-primary mt-2 mb-2" (click)="takePhoto()">
+  <button [disabled]="loading" type="button" class="btn btn-primary mt-2 mb-2" (click)="takePhoto()">
     Leer DNI
   </button>
   <div class="progress">

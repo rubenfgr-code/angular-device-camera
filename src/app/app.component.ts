@@ -19,7 +19,8 @@ export class AppComponent implements AfterViewInit {
   @ViewChild('video') video!: ElementRef;
   @ViewChild('progress') progress!: ElementRef;
 
-  ocrResult = 'Recognizing...';
+  ocrResult = '---';
+  loading = false;
 
   ngAfterViewInit() {
     navigator.mediaDevices
@@ -47,17 +48,23 @@ export class AppComponent implements AfterViewInit {
         this.video.nativeElement.videoHeight
       );
 
+    this.loading = true;
+
     const worker = createWorker({
       logger: (m) => {
         const value = m.progress.toFixed(2);
-        this.progress.nativeElement.style.width = `${value * 100}%`;
+        const pro = value * 100;
+        if (pro > 98 && m.status === 'recognizing text') {
+          this.loading = false;
+        }
+        this.progress.nativeElement.style.width = `${pro}%`;
       },
     });
 
     await worker.load();
     await worker.loadLanguage('spa');
     await worker.initialize('spa');
-    const { data } = await worker.recognize(canvas);
+    const { data } = await worker.recognize(canvas, {});
 
     if (data && data.text) {
       this.checkDNI(data.text);
@@ -67,16 +74,25 @@ export class AppComponent implements AfterViewInit {
   };
 
   checkDNI(text: string) {
-    const dnis = text.match(/(.*)([0-9]{8}[A-Z]{1})(.*)/);
+    console.log(text);
+    let dnis = text.match(/(.*)([0-9]{8}[A-Z]{1})(.*)/);
 
     if (dnis && dnis.length > 3) {
       const dni = dnis[2];
       this.ocrResult = dni;
     } else {
-      this.ocrResult = 'N/A';
+      dnis = text.match(/(.*)([0-9]{8})(.*)/);
+      if (dnis && dnis.length > 3) {
+        const ABC = 'TRWAGMYFPDXBNJZSQVHLCKE';
+        const dniNumbers = dnis[2];
+        const letter = ABC.charAt(Number.parseInt(dniNumbers) % 23);
+        this.ocrResult = dniNumbers + letter;
+      } else {
+        this.ocrResult = 'N/A';
+      }
     }
 
-    /* const ABC = 'TRWAGMYFPDXBNJZSQVHLCKE';
+    /* ;
     ABC.charAt(nifNumbers % 23); */
   }
 }
